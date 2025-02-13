@@ -1,4 +1,5 @@
 mod map_variants;
+mod json2tsv;
 
 use crate::cli::Args;
 use crate::cmd::map_variants::map_variants;
@@ -14,6 +15,7 @@ impl Cmds {
     pub(crate) fn new() -> Cmds {
         let mut cmds: BTreeMap<String, FuncBox>  = BTreeMap::new();
         cmds.insert(names::MAP_VARIANTS.to_string(), Box::new(map_variants));
+        cmds.insert(names::JSON2TSV.to_string(), Box::new(json2tsv::json2tsv));
         Cmds { cmds }
     }
     pub(crate) fn get(&self, cmd: &str) -> Option<&FuncBox> {
@@ -44,5 +46,6 @@ impl Default for Cmds {
 
 mod names {
     pub(crate) const MAP_VARIANTS: &str = "map_variants";
+    pub(crate) const JSON2TSV: &str = "json2tsv";
 }
 

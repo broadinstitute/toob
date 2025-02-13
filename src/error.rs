@@ -75,8 +75,8 @@ impl From<ParseIntError> for Error {
     }
 }
 
-impl From<reqwest::Error> for Error {
-    fn from(error: reqwest::Error) -> Self {
-        Error::new("Reqwest error".to_string(), Some(Box::new(error)))
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Error::new("JSON error".to_string(), Some(Box::new(error)))
     }
 }
