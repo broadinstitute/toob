@@ -1,8 +1,8 @@
-mod map_variants;
+mod vars2exac;
 mod json2tsv;
 
 use crate::cli::Args;
-use crate::cmd::map_variants::map_variants;
+use crate::cmd::vars2exac::vars2exac;
 use crate::error::Error;
 use std::collections::BTreeMap;
 
@@ -14,7 +14,7 @@ pub(crate) struct Cmds {
 impl Cmds {
     pub(crate) fn new() -> Cmds {
         let mut cmds: BTreeMap<String, FuncBox>  = BTreeMap::new();
-        cmds.insert(names::MAP_VARIANTS.to_string(), Box::new(map_variants));
+        cmds.insert(names::VARS2EXAC.to_string(), Box::new(vars2exac));
         cmds.insert(names::JSON2TSV.to_string(), Box::new(json2tsv::json2tsv));
         Cmds { cmds }
     }
@@ -45,7 +45,7 @@ impl Default for Cmds {
 }
 
 mod names {
-    pub(crate) const MAP_VARIANTS: &str = "map_variants";
+    pub(crate) const VARS2EXAC: &str = "vars2exac";
     pub(crate) const JSON2TSV: &str = "json2tsv";
 }
 
