@@ -12,3 +12,5 @@ license = "BSD-3-Clause"
 
 [dependencies]
 serde_json = "1.0.138"
+log = "0.4.25"
+simplelog = "0.12.2"

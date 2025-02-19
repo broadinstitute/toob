@@ -27,7 +27,7 @@ impl Args {
     pub(crate) fn get(&self, key1: &str, key2: &str, name: &str) -> Result<&Vec<String>, Error> {
         self.args.get(key1).or(self.args.get(key2))
             .ok_or(Error::from(
-                format!("Missing argument for {}. ('{}' or '{}')", name, key1, key2)
+                format!("Missing argument for {}. ('-{}' or '-{}')", name, key1, key2)
             ))
     }
     pub(crate) fn check(&self, key1: &str, key2: &str) -> bool {

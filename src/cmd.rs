@@ -1,6 +1,6 @@
 mod vars2exac;
 mod json2tsv;
-mod parse_allele_reg;
+mod allele_re2map;
 
 use crate::cli::Args;
 use crate::cmd::vars2exac::vars2exac;
@@ -17,8 +17,8 @@ impl Cmds {
         let mut cmds: BTreeMap<String, FuncBox>  = BTreeMap::new();
         cmds.insert(names::VARS2EXAC.to_string(), Box::new(vars2exac));
         cmds.insert(names::JSON2TSV.to_string(), Box::new(json2tsv::json2tsv));
-        cmds.insert(names::PARSE_ALLELE_REG.to_string(),
-                    Box::new(parse_allele_reg::parse_allele_reg));
+        cmds.insert(names::ALLELE_REG2MAP.to_string(),
+                    Box::new(allele_re2map::allele_reg2map));
         Cmds { cmds }
     }
     pub(crate) fn get(&self, cmd: &str) -> Option<&FuncBox> {
@@ -50,6 +50,6 @@ impl Default for Cmds {
 mod names {
     pub(crate) const VARS2EXAC: &str = "vars2exac";
     pub(crate) const JSON2TSV: &str = "json2tsv";
-    pub(crate) const PARSE_ALLELE_REG: &str = "parse_allele_reg";
+    pub(crate) const ALLELE_REG2MAP: &str = "allele_reg2map";
 }
 

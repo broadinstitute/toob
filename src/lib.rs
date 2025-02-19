@@ -1,3 +1,5 @@
+use log::LevelFilter;
+use simplelog::{ColorChoice, Config as LogConfig, TermLogger, TerminalMode};
 use crate::cli::Args;
 use crate::cmd::Cmds;
 use crate::error::Error;
@@ -7,6 +9,12 @@ pub mod cmd;
 pub mod error;
 
 pub fn run_cli() -> Result<(), Error> {
+    TermLogger::init(
+        LevelFilter::Info,
+        LogConfig::default(),
+        TerminalMode::Mixed,
+        ColorChoice::Auto
+    ).unwrap();
     let args = Args::new();
     let cmds = Cmds::new();
     let cmd_str = args.get_cmd().ok_or(
