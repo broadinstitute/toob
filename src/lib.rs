@@ -12,7 +12,7 @@ pub fn run_cli() -> Result<(), Error> {
     TermLogger::init(
         LevelFilter::Info,
         LogConfig::default(),
-        TerminalMode::Mixed,
+        TerminalMode::Stderr,
         ColorChoice::Auto
     ).unwrap();
     let args = Args::new();
