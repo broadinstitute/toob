@@ -7,6 +7,7 @@ use crate::error::Error;
 pub mod cli;
 pub mod cmd;
 pub mod error;
+mod util;
 
 pub fn run_cli() -> Result<(), Error> {
     TermLogger::init(
