@@ -1,36 +1,43 @@
-use std::borrow::Cow;
-use serde_json::{Map, Value};
 use crate::error::Error;
+use serde_json::{Map, Value};
+use std::borrow::Cow;
+use std::sync::Arc;
 
 enum PathPart {
     Key(Cow<'static, str>),
-    Index(usize)
+    Index(usize),
 }
+
+struct CursorCore<'a> {
+    parent: Option<(PathPart, JsonCursor<'a>)>,
+    value: &'a Value,
+}
+#[derive(Clone)]
 pub(crate) struct JsonCursor<'a> {
-    parent: Option<(PathPart, &'a JsonCursor<'a>)>,
-    value: &'a Value
+    core: Arc<CursorCore<'a>>,
 }
 
 pub(crate) struct Array<'a> {
-    cursor: &'a JsonCursor<'a>,
+    cursor: JsonCursor<'a>,
     items: &'a [Value],
 }
 
 pub(crate) struct Object<'a> {
-    cursor: &'a JsonCursor<'a>,
+    cursor: JsonCursor<'a>,
     items: &'a Map<String, Value>,
 }
 
 impl<'a> JsonCursor<'a> {
     pub(crate) fn new(value: &'a Value) -> Self {
-        Self { parent: None, value }
-    }
-    pub(crate) fn json(&self) -> &Value {
-        self.value
+        let core = Arc::new(CursorCore {
+            parent: None,
+            value,
+        });
+        Self { core }
     }
     pub(crate) fn path_string(&self) -> String {
-        match &self.parent {
-            None => { "$".to_string() }
+        match &self.core.parent {
+            None => "$".to_string(),
             Some((path_part, parent_cursor)) => {
                 let mut path = parent_cursor.path_string();
                 match path_part {
@@ -48,16 +55,43 @@ impl<'a> JsonCursor<'a> {
             }
         }
     }
-    pub(crate) fn as_array(&self) -> Result<Array, Error> {
-        match self.value {
-            Value::Array(items) => Ok(Array { cursor: self, items }),
-            _ => Err(Error::from(format!("{} is not an array", self.path_string())))
+    pub(crate) fn as_array<'b>(&'b self) -> Result<Array<'a>, Error> {
+        match self.core.value {
+            Value::Array(items) => Ok(Array {
+                cursor: self.clone(),
+                items,
+            }),
+            _ => Err(Error::from(format!(
+                "{} is not an array",
+                self.path_string()
+            ))),
         }
     }
-    pub(crate) fn as_object(&self) -> Result<Object, Error> {
-        match self.value {
-            Value::Object(items) => Ok(Object { cursor: self, items }),
-            _ => Err(Error::from(format!("{} is not an object", self.path_string())))
+    pub(crate) fn as_object(&self) -> Result<Object<'a>, Error> {
+        match self.core.value {
+            Value::Object(items) => Ok(Object {
+                cursor: self.clone(),
+                items,
+            }),
+            _ => Err(Error::from(format!(
+                "{} is not an object",
+                self.path_string()
+            ))),
+        }
+    }
+    pub(crate) fn as_str(&self) -> Result<&'a str, Error> {
+        match self.core.value {
+            Value::String(s) => Ok(s),
+            _ => Err(Error::from(format!(
+                "{} is not a string",
+                self.path_string()
+            ))),
+        }
+    }
+    pub(crate) fn as_str_opt(&self) -> Option<&'a str> {
+        match self.core.value {
+            Value::String(s) => Some(s),
+            _ => None,
         }
     }
 }
@@ -65,30 +99,39 @@ impl<'a> JsonCursor<'a> {
 impl Array<'_> {
     pub(crate) fn iter(&self) -> impl Iterator<Item = JsonCursor> {
         self.items.iter().enumerate().map(move |(i, value)| {
-            JsonCursor {
-                parent: Some((PathPart::Index(i), self.cursor)),
-                value
-            }
+            let core = Arc::new(CursorCore {
+                parent: Some((PathPart::Index(i), self.cursor.clone())),
+                value,
+            });
+            JsonCursor { core }
         })
     }
 }
 
-impl Object<'_> {
-    pub(crate) fn get_str(&self, key: &'static str) -> Result<JsonCursor, Error> {
+impl<'a> Object<'a> {
+    pub(crate) fn get(&self, key: &'static str) -> Result<JsonCursor<'a>, Error> {
         match self.items.get(key) {
-            Some(value) => Ok(JsonCursor {
-                parent: Some((PathPart::Key(Cow::Borrowed(key)), self.cursor)),
-                value
-            }),
-            None => Err(Error::from(
-                format!("{} does not have key '{}'", self.cursor.path_string(), key)
-            ))
+            Some(value) => {
+                let core = Arc::new(CursorCore {
+                    parent: Some((PathPart::Key(Cow::Borrowed(key)), self.cursor.clone())),
+                    value,
+                });
+                Ok(JsonCursor { core })
+            }
+            None => Err(Error::from(format!(
+                "{} does not have key '{}'",
+                self.cursor.path_string(),
+                key
+            ))),
         }
     }
-    pub(crate) fn get_str_opt(&self, key: &'static str) -> Option<JsonCursor> {
-        self.items.get(key).map(|value| JsonCursor {
-            parent: Some((PathPart::Key(Cow::Borrowed(key)), self.cursor)),
-            value
+    pub(crate) fn get_opt(&self, key: &'static str) -> Option<JsonCursor<'a>> {
+        self.items.get(key).map(|value| {
+            let core = Arc::new(CursorCore {
+                parent: Some((PathPart::Key(Cow::Borrowed(key)), self.cursor.clone())),
+                value,
+            });
+            JsonCursor { core }
         })
     }
 }
